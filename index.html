@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>그림 게임</title>
+
+<style>
+body {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    font-family: sans-serif;
+}
+
+#palette {
+    display: grid;
+    grid-template-columns: repeat(5, 50px);
+    gap: 2px;
+}
+
+.pixel {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+#colors {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.color-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid black;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="palette"></div>
+
+<div id="colors">
+    <div class="color-btn" style="background:black"></div>
+    <div class="color-btn" style="background:red"></div>
+    <div class="color-btn" style="background:blue"></div>
+    <div class="color-btn" style="background:green"></div>
+    <div class="color-btn" style="background:yellow"></div>
+</div>
+
+<script>
+const palette = document.getElementById("palette");
+let currentColor = "black";
+
+for(let i = 0; i < 25; i++) {
+    const pixel = document.createElement("div");
+    pixel.className = "pixel";
+
+    pixel.addEventListener("click", () => {
+        pixel.style.backgroundColor = currentColor;
+    });
+
+    palette.appendChild(pixel);
+}
+
+document.querySelectorAll(".color-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        currentColor = btn.style.backgroundColor;
+    });
+});
+</script>
+
+</body>
+</html>
