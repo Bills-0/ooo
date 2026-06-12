@@ -6,53 +6,61 @@
 <title>그림판</title>
 
 <style>
-body {
-    margin: 20px;
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    background: #f0f0f0;
+*{
+    box-sizing:border-box;
 }
 
-.toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
+body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    font-family:sans-serif;
 }
 
-canvas {
-    background: white;
-    border: 2px solid black;
-    cursor: crosshair;
+.toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    padding:10px;
+    background:#f0f0f0;
+    border-bottom:2px solid #ccc;
 }
 
-button {
-    padding: 8px 12px;
-    cursor: pointer;
+button{
+    padding:8px 12px;
+    cursor:pointer;
+}
+
+canvas{
+    flex:1;
+    background:white;
+    cursor:crosshair;
 }
 </style>
 </head>
 <body>
 
 <div class="toolbar">
+
     <input type="color" id="colorPicker" value="#000000">
 
     <label>
-        브러시:
-        <input type="range" id="brushSize" min="1" max="50" value="5">
+        브러시
+        <input type="range" id="brushSize" min="1" max="100" value="5">
     </label>
+
     <span id="sizeText">5px</span>
 
     <button id="penBtn">✏️ 펜</button>
     <button id="eraserBtn">🩹 지우개</button>
     <button id="undoBtn">↩️ 실행 취소</button>
     <button id="clearBtn">🧽 전체 지우기</button>
+
 </div>
 
-<canvas id="canvas" width="900" height="550"></canvas>
+<canvas id="canvas"></canvas>
 
 <script>
 const canvas = document.getElementById("canvas");
@@ -72,10 +80,26 @@ let erasing = false;
 
 const history = [];
 
+function resizeCanvas() {
+    const temp = document.createElement("canvas");
+    temp.width = canvas.width;
+    temp.height = canvas.height;
+
+    temp.getContext("2d").drawImage(canvas, 0, 0);
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - document.querySelector(".toolbar").offsetHeight;
+
+    ctx.drawImage(temp, 0, 0);
+}
+
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
 function saveState() {
     history.push(canvas.toDataURL());
 
-    if (history.length > 30) {
+    if(history.length > 30){
         history.shift();
     }
 }
@@ -94,18 +118,18 @@ eraserBtn.addEventListener("click", () => {
 
 clearBtn.addEventListener("click", () => {
     saveState();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 });
 
 undoBtn.addEventListener("click", () => {
-    if (history.length === 0) return;
+    if(history.length === 0) return;
 
     const img = new Image();
     img.src = history.pop();
 
     img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0);
     };
 });
 
@@ -119,12 +143,12 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 canvas.addEventListener("mousemove", (e) => {
-    if (!drawing) return;
+    if(!drawing) return;
 
     ctx.lineWidth = brushSize.value;
     ctx.lineCap = "round";
 
-    if (erasing) {
+    if(erasing){
         ctx.strokeStyle = "#FFFFFF";
     } else {
         ctx.strokeStyle = colorPicker.value;
@@ -132,6 +156,9 @@ canvas.addEventListener("mousemove", (e) => {
 
     ctx.lineTo(e.offsetX, e.offsetY);
     ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
 });
 
 canvas.addEventListener("mouseup", () => {
