@@ -77,3 +77,15 @@ document.querySelectorAll(".color-btn").forEach(btn => {
 
 </body>
 </html>
+<div class="toolbar">
+    <input type="color" id="colorPicker" value="#000000">
+
+    <label>
+        불투명도
+        <input type="range" id="opacity" min="0" max="100" value="100">
+    </label>
+
+    <span id="opacityValue">100%</span>
+
+    <button onclick="clearCanvas()">지우기</button>
+</div>
