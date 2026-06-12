@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>그림판</title>
+<title>3분 그림 챌린지</title>
 
 <style>
 *{
@@ -21,8 +21,8 @@ body{
 .toolbar{
     display:flex;
     flex-wrap:wrap;
-    gap:10px;
     align-items:center;
+    gap:10px;
     padding:10px;
     background:#f0f0f0;
     border-bottom:2px solid #ccc;
@@ -31,6 +31,18 @@ body{
 button{
     padding:8px 12px;
     cursor:pointer;
+}
+
+#difficulty{
+    font-weight:bold;
+}
+
+#prompt{
+    font-weight:bold;
+}
+
+#timer{
+    font-weight:bold;
 }
 
 canvas{
@@ -44,6 +56,14 @@ canvas{
 
 <div class="toolbar">
 
+    <span id="difficulty">난이도: -</span>
+
+    <span id="prompt">제시어: -</span>
+
+    <span id="timer">03:00</span>
+
+    <button id="nextRoundBtn">🔄 다음 제시어</button>
+
     <input type="color" id="colorPicker" value="#000000">
 
     <label>
@@ -55,6 +75,7 @@ canvas{
 
     <button id="penBtn">✏️ 펜</button>
     <button id="eraserBtn">🩹 지우개</button>
+
     <button id="undoBtn">↩️ 실행 취소</button>
     <button id="clearBtn">🧽 전체 지우기</button>
 
@@ -75,28 +96,67 @@ const eraserBtn = document.getElementById("eraserBtn");
 const undoBtn = document.getElementById("undoBtn");
 const clearBtn = document.getElementById("clearBtn");
 
+const difficultyText = document.getElementById("difficulty");
+const promptText = document.getElementById("prompt");
+const timerText = document.getElementById("timer");
+const nextRoundBtn = document.getElementById("nextRoundBtn");
+
 let drawing = false;
 let erasing = false;
+let currentPrompt = "";
+let roundFinished = false;
+let timeLeft = 180;
 
 const history = [];
 
-function resizeCanvas() {
+const promptLevels = {
+
+    쉬움: {
+        time: 180,
+        prompts: [
+            "사과","바나나","꽃","별",
+            "하트","해","집","나무"
+        ]
+    },
+
+    보통: {
+        time: 150,
+        prompts: [
+            "강아지","고양이","햄버거","피자",
+            "물고기","토끼","자동차","자전거"
+        ]
+    },
+
+    어려움: {
+        time: 120,
+        prompts: [
+            "피아노","우주선","용","로봇",
+            "성","잠수함","헬리콥터","관람차"
+        ]
+    }
+};
+
+function resizeCanvas(){
+
     const temp = document.createElement("canvas");
     temp.width = canvas.width;
     temp.height = canvas.height;
 
-    temp.getContext("2d").drawImage(canvas, 0, 0);
+    temp.getContext("2d").drawImage(canvas,0,0);
 
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - document.querySelector(".toolbar").offsetHeight;
+    canvas.height =
+        window.innerHeight -
+        document.querySelector(".toolbar").offsetHeight;
 
-    ctx.drawImage(temp, 0, 0);
+    ctx.drawImage(temp,0,0);
 }
 
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-function saveState() {
+function saveState(){
+
     history.push(canvas.toDataURL());
 
     if(history.length > 30){
@@ -104,8 +164,81 @@ function saveState() {
     }
 }
 
+function pickPrompt(){
+
+    const difficulties =
+        Object.keys(promptLevels);
+
+    const difficulty =
+        difficulties[
+            Math.floor(
+                Math.random() * difficulties.length
+            )
+        ];
+
+    const data =
+        promptLevels[difficulty];
+
+    currentPrompt =
+        data.prompts[
+            Math.floor(
+                Math.random() * data.prompts.length
+            )
+        ];
+
+    difficultyText.textContent =
+        "난이도: " + difficulty;
+
+    promptText.textContent =
+        "제시어: " + currentPrompt;
+
+    timeLeft = data.time;
+
+    roundFinished = false;
+}
+
+function updateTimer(){
+
+    if(roundFinished) return;
+
+    const minutes =
+        String(Math.floor(timeLeft / 60)).padStart(2,"0");
+
+    const seconds =
+        String(timeLeft % 60).padStart(2,"0");
+
+    timerText.textContent =
+        `${minutes}:${seconds}`;
+
+    timeLeft--;
+
+    if(timeLeft < 0){
+
+        roundFinished = true;
+
+        timerText.textContent =
+            "⏰ 시간 종료!";
+
+        alert(
+            "시간 종료!\n그림을 감상한 뒤 '다음 제시어' 버튼을 눌러주세요."
+        );
+    }
+}
+
+setInterval(updateTimer,1000);
+
+nextRoundBtn.addEventListener("click", () => {
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    history.length = 0;
+
+    pickPrompt();
+});
+
 brushSize.addEventListener("input", () => {
-    sizeText.textContent = brushSize.value + "px";
+    sizeText.textContent =
+        brushSize.value + "px";
 });
 
 penBtn.addEventListener("click", () => {
@@ -117,59 +250,97 @@ eraserBtn.addEventListener("click", () => {
 });
 
 clearBtn.addEventListener("click", () => {
+
     saveState();
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
 });
 
 undoBtn.addEventListener("click", () => {
+
     if(history.length === 0) return;
 
     const img = new Image();
+
     img.src = history.pop();
 
     img.onload = () => {
-        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
         ctx.drawImage(img,0,0);
     };
 });
 
 canvas.addEventListener("mousedown", (e) => {
+
     saveState();
 
     drawing = true;
 
     ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
+
+    ctx.moveTo(
+        e.offsetX,
+        e.offsetY
+    );
 });
 
 canvas.addEventListener("mousemove", (e) => {
+
     if(!drawing) return;
 
-    ctx.lineWidth = brushSize.value;
-    ctx.lineCap = "round";
+    ctx.lineWidth =
+        brushSize.value;
 
-    if(erasing){
-        ctx.strokeStyle = "#FFFFFF";
-    } else {
-        ctx.strokeStyle = colorPicker.value;
-    }
+    ctx.lineCap =
+        "round";
 
-    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.strokeStyle =
+        erasing
+        ? "#FFFFFF"
+        : colorPicker.value;
+
+    ctx.lineTo(
+        e.offsetX,
+        e.offsetY
+    );
+
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
+
+    ctx.moveTo(
+        e.offsetX,
+        e.offsetY
+    );
 });
 
 canvas.addEventListener("mouseup", () => {
+
     drawing = false;
+
     ctx.beginPath();
 });
 
 canvas.addEventListener("mouseleave", () => {
+
     drawing = false;
+
     ctx.beginPath();
 });
+
+pickPrompt();
 </script>
 
 </body>
